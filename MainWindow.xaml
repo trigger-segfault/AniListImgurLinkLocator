@@ -1,0 +1,66 @@
+﻿<Window x:Class="AniListImgurPurgeScanner.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AniListImgurPurgeScanner"
+        mc:Ignorable="d"
+        Title="AniList Imgur Link Locator" Height="350" Width="600">
+    <Grid Loaded="OnWindowLoaded">
+        <Button x:Name="buttonLoad" Content="Load" HorizontalAlignment="Left" ToolTip="Load all activities from AniList or from cache" Margin="10,86,0,0" VerticalAlignment="Top" Click="OnButtonLoadClick" Width="64"/>
+        <Button x:Name="buttonReload" Content="Reload" HorizontalAlignment="Left" ToolTip="Reload all activities from AniList" Margin="79,86,0,0" VerticalAlignment="Top" Click="OnButtonReloadClick" Width="83"/>
+        <Button x:Name="buttonCount" Content="Count Remaining" ToolTip="Count number of remaining currently loaded activities" HorizontalAlignment="Left" Margin="10,111,0,0" VerticalAlignment="Top" Click="CountRemaining" Width="152" />
+        <Label x:Name="resultText" Content="Result" HorizontalAlignment="Left" Margin="10,136,0,0" VerticalAlignment="Top"/>
+        <DockPanel VerticalAlignment="Bottom">
+            <Grid DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="buttonGoto" Content="Goto" Grid.Column="0" VerticalAlignment="Bottom" Height="28" Click="GotoActivity" />
+                <Button x:Name="buttonOpen" Content="Open" Grid.Column="1" VerticalAlignment="Bottom" Height="28" Click="OpenActivityUrl" />
+                <Button x:Name="buttonBack" Content="Back" Grid.Column="2" VerticalAlignment="Bottom" Height="28" Click="PreviousActivity"/>
+                <Button x:Name="buttonNext" Content="Next" Grid.Column="3" VerticalAlignment="Bottom" FontWeight="Bold" Height="28" FontSize="16" Click="NextActivity"/>
+
+            </Grid>
+            <StatusBar x:Name="statusBar" DockPanel.Dock="Bottom" VerticalAlignment="Bottom">
+                <TextBox x:Name="textBoxActivityId" Text="0" Width="100"/>
+                <Button x:Name="statusBarActivityId" Content="Copy ID" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Center" HorizontalContentAlignment="Center" Click="CopyActivityId"/>
+                <Separator />
+
+                <TextBlock x:Name="statusBarName" Text="-"/>
+                <TextBlock x:Name="statusBarDate" Text=""/>
+                <Separator />
+                <!--<TextBlock Text="Page: "/>
+                <TextBlock x:Name="statusBarPage" Text="0"/>
+                <TextBlock Text="Activity: "/>
+                <TextBlock x:Name="statusBarActivity" Text="0"/>
+                <TextBlock Text="Reply: "/>
+                <TextBlock x:Name="statusBarReply" Text="0"/>
+                <TextBlock Text="Imgur Link: "/>
+                <TextBlock x:Name="statusBarImgurLink" Text="0"/>-->
+
+                <TextBlock Text="Posts: "/>
+                <TextBlock x:Name="statusBarPosts" Text="-"/>
+                <TextBlock Text="Replies: "/>
+                <TextBlock x:Name="statusBarReplies" Text="-"/>
+                <TextBlock Text="Imgur Links: "/>
+                <TextBlock x:Name="statusBarImgurLinks" Text="-"/>
+
+            </StatusBar>
+        </DockPanel>
+        <Label x:Name="countText" Content="Count" HorizontalAlignment="Left" Margin="10,167,0,0" VerticalAlignment="Top"/>
+        <ComboBox x:Name="comboBoxActivityType" HorizontalAlignment="Left" Margin="10,59,0,0" VerticalAlignment="Top" Width="152" SelectionChanged="OnActivityTypeChanged">
+            <ComboBoxItem IsSelected="True">List Activities</ComboBoxItem>
+            <ComboBoxItem>Text Activities</ComboBoxItem>
+            <ComboBoxItem>Message Activities</ComboBoxItem>
+        </ComboBox>
+        <Label x:Name="progressText" Content="Progress" HorizontalAlignment="Left" Margin="10,198,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="textBoxUserName" HorizontalAlignment="Left" Margin="68,10,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="150" TextChanged="OnUsernameChanged"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" Text="Username" TextWrapping="Wrap" VerticalAlignment="Top"/>
+        <CheckBox x:Name="checkBoxAutoOpen" Content="Auto-Open URLs" HorizontalAlignment="Left" Margin="10,35,0,0" VerticalAlignment="Top" Checked="OnAutoOpenChanged" Unchecked="OnAutoOpenChanged"/>
+    </Grid>
+</Window>
