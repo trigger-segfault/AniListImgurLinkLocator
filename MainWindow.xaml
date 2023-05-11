@@ -56,7 +56,8 @@
         <ComboBox x:Name="comboBoxActivityType" HorizontalAlignment="Left" Margin="10,59,0,0" VerticalAlignment="Top" Width="152" SelectionChanged="OnActivityTypeChanged">
             <ComboBoxItem IsSelected="True">List Activities</ComboBoxItem>
             <ComboBoxItem>Text Activities</ComboBoxItem>
-            <ComboBoxItem>Message Activities</ComboBoxItem>
+            <ComboBoxItem>Received Messages</ComboBoxItem>
+            <ComboBoxItem>Sent Messages</ComboBoxItem>
         </ComboBox>
         <Label x:Name="progressText" Content="Progress" HorizontalAlignment="Left" Margin="10,198,0,0" VerticalAlignment="Top"/>
         <TextBox x:Name="textBoxUserName" HorizontalAlignment="Left" Margin="68,10,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="150" TextChanged="OnUsernameChanged"/>

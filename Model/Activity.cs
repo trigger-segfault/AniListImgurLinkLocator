@@ -8,9 +8,11 @@ namespace AniListImgurPurgeScanner.Model
 {
 	public enum ActivityType
 	{
-		List = 0,
-		Text = 1,
-		Message = 2,
+		List = 0, // Media list activity.
+		Text = 1, // Status activity.
+		Message = 2, // Message received on the user's profile.
+
+		SentMessage = 3, // Message sent to another profile.
 
 		Count,
 	}
@@ -105,11 +107,20 @@ namespace AniListImgurPurgeScanner.Model
 		// This assumes the activity text has already been added as an 'IsPost' reply.
 		[JsonIgnore]
 		public int ImgurCount => Replies.Sum(r => r.ImgurCount);
+
+		public abstract bool IsSent { get; set; }
 	}
 
 
 	public class ListActivity : BaseActivity
 	{
+		[JsonIgnore]
+		public override bool IsSent
+		{
+			get => false;
+			set { }
+		}
+
 		//[JsonIgnore]
 		public override string Title => Media?.Title?.Romaji;
 
@@ -129,6 +140,13 @@ namespace AniListImgurPurgeScanner.Model
 
 	public class TextActivity : BaseActivity
 	{
+		[JsonIgnore]
+		public override bool IsSent
+		{
+			get => false;
+			set { }
+		}
+
 		//[JsonIgnore]
 		public override string Title => "TEXT";
 
@@ -141,11 +159,36 @@ namespace AniListImgurPurgeScanner.Model
 
 	public class MessageActivity : BaseActivity
 	{
+		// True if this is a message sent by the user to another profile.
+		// '_' for property that's not part of the AniList API.
+		[JsonProperty("_is_sent_", DefaultValueHandling = DefaultValueHandling.Ignore)]
+		public override bool IsSent { get; set; }
+
 		//[JsonIgnore]
-		public override string Title => (UserName != null ? $"@{UserName}" : "[Removed]");
+		public override string Title
+		{
+			get
+			{
+				//return (UserName != null ? $"@{UserName}" : "[Removed]");
+
+				// Display as "From @User" or "To @Recipient".
+				string name = (!IsSent ? UserName : RecipientName);
+				name = (name != null ? $"@{name}" : "[Removed]");
+				return (!IsSent ? $"From {name}" : $"To {name}");
+			}
+		}
 
 		[JsonProperty("messenger")]
 		public override AniListUser User { get; set; }
+
+		[JsonProperty("recipient")]
+		public AniListUser Recipient { get; set; }
+
+		[JsonIgnore]
+		public long RecipientId => Recipient?.Id ?? 0;
+
+		[JsonIgnore]
+		public string RecipientName => Recipient?.Name;
 
 		[JsonProperty("message")]
 		public override string Text { get; set; }
@@ -154,7 +197,9 @@ namespace AniListImgurPurgeScanner.Model
 
 	public class ActivityReply
 	{
-		[JsonIgnore]
+		// True if this is the body of a message or text activity.
+		// '_' for property that's not part of the AniList API.
+		[JsonProperty("_is_post_", DefaultValueHandling = DefaultValueHandling.Ignore)]
 		public bool IsPost { get; set; }
 
 		[JsonProperty("user")]

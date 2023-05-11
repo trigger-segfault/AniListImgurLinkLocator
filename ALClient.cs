@@ -27,6 +27,7 @@ namespace AniListImgurPurgeScanner
             { ActivityType.List, "list_activities.json" },
             { ActivityType.Text, "text_activities.json" },
             { ActivityType.Message, "message_activities.json" },
+            { ActivityType.SentMessage, "sent_message_activities.json" },
         };
 
 
@@ -46,7 +47,9 @@ namespace AniListImgurPurgeScanner
 				{
                 case ActivityType.List: result = serializer.Deserialize<List<ActivitiesPage<ListActivity>>>(jsonReader); break;
                 case ActivityType.Text: result = serializer.Deserialize<List<ActivitiesPage<TextActivity>>>(jsonReader); break;
-                case ActivityType.Message: result = serializer.Deserialize<List<ActivitiesPage<MessageActivity>>>(jsonReader); break;
+
+                case ActivityType.Message:
+                case ActivityType.SentMessage: result = serializer.Deserialize<List<ActivitiesPage<MessageActivity>>>(jsonReader); break;
                 }
                 return result;
             }
@@ -70,16 +73,19 @@ namespace AniListImgurPurgeScanner
 			{
             case ActivityType.List: return await LookupPageType<ListActivity>(type, userId, page, rateLimitedCallback, cancellationToken);
             case ActivityType.Text: return await LookupPageType<TextActivity>(type, userId, page, rateLimitedCallback, cancellationToken);
-            case ActivityType.Message: return await LookupPageType<MessageActivity>(type, userId, page, rateLimitedCallback, cancellationToken);
+
+            case ActivityType.Message:
+            case ActivityType.SentMessage: return await LookupPageType<MessageActivity>(type, userId, page, rateLimitedCallback, cancellationToken);
             }
             return null;
 		}
 
-        private async Task<ActivitiesPage<T>> LookupPageType<T>(ActivityType type, long userId, int page, Action<bool> rateLimitedCallback, CancellationToken cancellationToken) where T : IActivity
+        private async Task<ActivitiesPage<T>> LookupPageType<T>(ActivityType type, long userId, int page, Action<bool> rateLimitedCallback, CancellationToken cancellationToken) where T : BaseActivity
         {
             string typeName = null;
             bool hasReplies = false;
             string onQuery = null;
+            string lookupParameter = "userId";
             switch (type)
 			{
             case ActivityType.List:
@@ -93,16 +99,25 @@ namespace AniListImgurPurgeScanner
                 onQuery = "... on TextActivity { siteUrl id createdAt text user { id name } replies { user { id name } createdAt text } } ";
                 break;
             case ActivityType.Message:
+            case ActivityType.SentMessage:
                 typeName = "MESSAGE";
-                hasReplies = true;
-                onQuery = "... on MessageActivity { siteUrl id createdAt message messenger { id name } replies { user { id name } createdAt text } } ";
+                if (type == ActivityType.Message)
+                {
+                    hasReplies = true; // This is someone else's sent message, so exclude the body.
+                }
+                else
+				{
+                    hasReplies = false; // This is our own sent message, so count the body.
+                    lookupParameter = "messengerId";
+                }
+                onQuery = "... on MessageActivity { siteUrl id createdAt message recipient { id name } messenger { id name } replies { user { id name } createdAt text } } ";
                 break;
             }
 
             var result = await CallGraphQLAsync<ActivitiesPageData<T>>(
                 "query ($page:Int!, $userId:Int!, $typeName:ActivityType!, $hasReplies:Boolean!) { " +
                     "Page(page:$page, perPage:50) { " +
-                        "activities(userId:$userId, type:$typeName, hasReplies:$hasReplies, sort:ID_DESC) { " +
+                        $"activities({lookupParameter}:$userId, type:$typeName, hasReplies:$hasReplies, sort:ID_DESC) {{ " +
                             onQuery +
                         "} " +
                         "pageInfo { hasNextPage } " +
@@ -140,9 +155,15 @@ namespace AniListImgurPurgeScanner
                 {
                     var activity = data.Activities[i];
 
+                    // Treat sent messages differently so they can use a different display name. (To @Recipient)
+                    if (type == ActivityType.SentMessage)
+					{
+                        activity.IsSent = true;
+					}
+
                     // Add a 'reply' for the post body when applicable.
-                    // Skip adding messages since we're not editing other users' links.
-                    if (type == ActivityType.Text /*|| type == ActivityType.Message*/)
+                    // Skip adding received messages since we're not editing other users' links.
+                    if (type == ActivityType.Text || type == ActivityType.SentMessage)
 					{
                         var body = new ActivityReply
                         {
